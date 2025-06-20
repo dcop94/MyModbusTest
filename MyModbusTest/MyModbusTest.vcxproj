@@ -188,7 +188,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="CMAINDlg.h" />
-    <ClInclude Include="CTITLEDlg.h" />
+    <ClInclude Include="CTCPChildDlg.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="libmodbus\config.h" />
     <ClInclude Include="libmodbus\modbus-private.h" />
@@ -206,7 +206,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CMAINDlg.cpp" />
-    <ClCompile Include="CTITLEDlg.cpp" />
+    <ClCompile Include="CTCPChildDlg.cpp" />
     <ClCompile Include="libmodbus\modbus-data.c" />
     <ClCompile Include="libmodbus\modbus-rtu.c" />
     <ClCompile Include="libmodbus\modbus-tcp.c" />

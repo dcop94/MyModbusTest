@@ -6,7 +6,6 @@
 #include "framework.h"
 #include "MyModbusTest.h"
 #include "MyModbusTestDlg.h"
-#include "CTITLEDlg.h"
 #include "CMAINDlg.h"
 
 #ifdef _DEBUG
@@ -74,14 +73,9 @@ BOOL CMyModbusTestApp::InitInstance()
 	SetRegistryKey(_T("MyModbusTest"));
 
 	// 타이틀 대화상자 실행 (모달)
-	CTITLEDlg titleDlg;
-	if (titleDlg.DoModal() == IDOK)
-	{
-		// 타이틀 종료 후 메인 대화상자 실행
-		CMAINDlg mainDlg;
-		m_pMainWnd = &mainDlg;
-		mainDlg.DoModal();
-	}
+	CMAINDlg dlg;
+	m_pMainWnd = &dlg;
+	dlg.DoModal();
 
 	if (pShellManager)
 		delete pShellManager;

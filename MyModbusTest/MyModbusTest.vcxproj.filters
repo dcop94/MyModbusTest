@@ -57,10 +57,10 @@
     <ClInclude Include="libmodbus\modbus-version.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="CTITLEDlg.h">
+    <ClInclude Include="CMAINDlg.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="CMAINDlg.h">
+    <ClInclude Include="CTCPChildDlg.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>
@@ -86,10 +86,10 @@
     <ClCompile Include="libmodbus\modbus-tcp.c">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="CTITLEDlg.cpp">
+    <ClCompile Include="CMAINDlg.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="CMAINDlg.cpp">
+    <ClCompile Include="CTCPChildDlg.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>

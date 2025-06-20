@@ -51,7 +51,7 @@ END_MESSAGE_MAP()
 
 
 CMyModbusTestDlg::CMyModbusTestDlg(CWnd* pParent /*=nullptr*/)
-	: CDialogEx(IDD_TITLE_DLG, pParent)
+	: CDialogEx(IDD_MAIN_DLG, pParent)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }

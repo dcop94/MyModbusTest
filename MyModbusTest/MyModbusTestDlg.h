@@ -1,36 +1,20 @@
-﻿
-// MyModbusTestDlg.h: 헤더 파일
-//
-
-#pragma once
+﻿#pragma once
 #include "resource.h"
 
-
-// CMyModbusTestDlg 대화 상자
 class CMyModbusTestDlg : public CDialogEx
 {
-// 생성입니다.
 public:
-	CMyModbusTestDlg(CWnd* pParent = nullptr);	// 표준 생성자입니다.
-	enum {IDD = IDD_TITLE_DLG};
+    CMyModbusTestDlg(CWnd* pParent = nullptr);  // 표준 생성자입니다.
+    enum { IDD = IDD_MAIN_DLG };  // 수정: IDD_TITLE_DLG 대신 IDD_MAIN_DLG 사용
 
-// 대화 상자 데이터입니다.
-#ifdef AFX_DESIGN_TIME
-	enum { IDD = IDD_TITLE_DLG };
-#endif
-
-	protected:
-	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV 지원입니다.
-
-
-// 구현입니다.
 protected:
-	HICON m_hIcon;
+    virtual void DoDataExchange(CDataExchange* pDX);  // DDX/DDV 지원
+    virtual BOOL OnInitDialog();
+    afx_msg void OnSysCommand(UINT nID, LPARAM lParam);
+    afx_msg void OnPaint();
+    afx_msg HCURSOR OnQueryDragIcon();
+    DECLARE_MESSAGE_MAP()
 
-	// 생성된 메시지 맵 함수
-	virtual BOOL OnInitDialog();
-	afx_msg void OnSysCommand(UINT nID, LPARAM lParam);
-	afx_msg void OnPaint();
-	afx_msg HCURSOR OnQueryDragIcon();
-	DECLARE_MESSAGE_MAP()
+private:
+    HICON m_hIcon;
 };

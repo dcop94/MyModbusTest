@@ -2,6 +2,7 @@
 #include <afxdialogex.h>
 #include <afxbutton.h>
 #include "resource.h"
+#include "CTCPChildDlg.h"
 
 class CMAINDlg : public CDialogEx
 {
@@ -20,21 +21,45 @@ protected:
 	DECLARE_MESSAGE_MAP()
 
 private:
-	//버튼
+	// 메인화면 전환 플래그
+	BOOL m_bIsMainMode;
+
+	// 타이틀 컨트롤
+	CStatic m_staticTitleLogoRight;
+	CMFCButton m_btnStart;
+
+	// 메인 컨트롤
 	CMFCButton m_btnTCP;
 	CMFCButton m_btnRtuOver;
 	CMFCButton m_btnRTU;
 	CMFCButton m_btnASCII;
+	CStatic m_staticMainLogoLeft;
+	CStatic m_staticMainLogoRight;
 
-	//로고
-	CStatic m_staticLogo;
+	// 좌측 메뉴
+	CFont m_fontMenu;
+	CBrush m_brushBlack;
+
+	//TCP 다이얼로그
+	CTCPChildDlg* m_pTCPCHILD;
+
+	HBITMAP ScaleBitmap(HBITMAP hBmpSrc, int nNewWidth, int nNewHeight);
+
 
 public:
 	// 버튼 클릭 핸들러
+	afx_msg void OnBnClickedButtonStartTitle();
 	afx_msg void OnBnClickedBtnTCP();
 	afx_msg void OnBnClickedBtnRtuOver();
 	afx_msg void OnBnClickedBtnRTU();
 	afx_msg void OnBnClickedBtnASCII();
-	HBITMAP ScaleBitmap(HBITMAP hBmpSrc, int nNewWidth, int nNewHeight);
+	
+	// 화면전환
+	void ShowTitleControls(BOOL bShow);
+	void ShowMainControls(BOOL bShow);
+	void ShowTcpControls(BOOL bShow);
+
+	// 버튼색상초기화
+	void ResetButtonColors();
 };
 

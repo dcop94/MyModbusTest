@@ -1,28 +1,41 @@
-#include "CMAINDlg.h"
+ï»¿#include "CMAINDlg.h"
 
 IMPLEMENT_DYNAMIC(CMAINDlg, CDialogEx)
 
-CMAINDlg::CMAINDlg(CWnd* pParent) : CDialogEx(IDD_MAIN_DLG, pParent)
+CMAINDlg::CMAINDlg(CWnd* pParent) : CDialogEx(IDD_MAIN_DLG, pParent), m_bIsMainMode(FALSE), m_pTCPCHILD(FALSE)
 {
 }
 
 CMAINDlg::~CMAINDlg()
 {
-
+    // child ë‹¤ì´ì–¼ë¡œê·¸ ì •ë¦¬
+    if (m_pTCPCHILD)
+    {
+        m_pTCPCHILD->DestroyWindow();
+        delete m_pTCPCHILD;
+        m_pTCPCHILD = nullptr;
+    }
 }
 
 void CMAINDlg::DoDataExchange(CDataExchange* pDX)
 {
     CDialogEx::DoDataExchange(pDX);
+
+    //íƒ€ì´í‹€
+    DDX_Control(pDX, IDC_STATIC_TITLE_LOGO_RIGHT, m_staticTitleLogoRight);
+    DDX_Control(pDX, IDC_BUTTON_TITLE_START, m_btnStart);
+
+    //ë©”ì¸
     DDX_Control(pDX, IDC_BTN_TCP, m_btnTCP);
     DDX_Control(pDX, IDC_BTN_RTUOVER, m_btnRtuOver);
     DDX_Control(pDX, IDC_BTN_RTU, m_btnRTU);
     DDX_Control(pDX, IDC_BTN_ASCII, m_btnASCII);
-
-    DDX_Control(pDX, IDC_STATIC_LOGO, m_staticLogo);
+    DDX_Control(pDX, IDC_STATIC_MAIN_LOGO_LEFT, m_staticMainLogoLeft);
+    DDX_Control(pDX, IDC_STATIC_MAIN_LOGO_RIGHT, m_staticMainLogoRight);
 }
 
 BEGIN_MESSAGE_MAP(CMAINDlg, CDialogEx)
+    ON_BN_CLICKED(IDC_BUTTON_TITLE_START, &CMAINDlg::OnBnClickedButtonStartTitle)
     ON_BN_CLICKED(IDC_BTN_TCP, &CMAINDlg::OnBnClickedBtnTCP)
     ON_BN_CLICKED(IDC_BTN_RTUOVER, &CMAINDlg::OnBnClickedBtnRtuOver)
     ON_BN_CLICKED(IDC_BTN_RTU, &CMAINDlg::OnBnClickedBtnRTU)
@@ -33,51 +46,175 @@ END_MESSAGE_MAP()
 BOOL CMAINDlg::OnInitDialog()
 {
     CDialogEx::OnInitDialog();
-    // ¸ŞÀÎ È­¸é ÃÊ±âÈ­ ÄÚµå Ãß°¡ (¿¹: ¸Ş´º, ¼³Á¤ ÄÁÆ®·Ñ µî)
 
-    //·Î°í ·Îµå
-    HBITMAP hBmpLogo = (HBITMAP)::LoadImage(
-        AfxGetInstanceHandle(),
-        MAKEINTRESOURCE(IDB_LOGO),
-        IMAGE_BITMAP,
-        0, 0,
-        LR_CREATEDIBSECTION
-    );
+    // ì¢Œì¸¡ë©”ë‰´ ì„¤ì •
+    m_brushBlack.CreateSolidBrush(RGB(0, 0, 0));
+    m_fontMenu.CreatePointFont(120, _T("Segoe UI Bold"));
 
-    if (hBmpLogo == nullptr)
+    // â€” 3) ë²„íŠ¼ ìŠ¤íƒ€ì¼Â·í°íŠ¸Â·ìƒ‰ ì§€ì •
+    auto SetupMenuBtn = [&](CMFCButton& btn, COLORREF back, COLORREF text, BOOL bold) {
+        btn.EnableWindowsTheming(FALSE);
+        btn.m_nFlatStyle = CMFCButton::BUTTONSTYLE_FLAT;
+        btn.SetFont(&m_fontMenu);
+        btn.SetFaceColor(back);
+        btn.SetTextColor(text);
+        };
+
+    // ê¸°ë³¸(ë¹„ì„ íƒ) ìƒ‰
+    SetupMenuBtn(m_btnTCP, RGB(0xF0, 0xF0, 0xF0), RGB(0x33, 0x33, 0x33), FALSE);
+    SetupMenuBtn(m_btnRtuOver, RGB(0xF0, 0xF0, 0xF0), RGB(0x33, 0x33, 0x33), FALSE);
+    SetupMenuBtn(m_btnRTU, RGB(0xF0, 0xF0, 0xF0), RGB(0x33, 0x33, 0x33), FALSE);
+    SetupMenuBtn(m_btnASCII, RGB(0xF0, 0xF0, 0xF0), RGB(0x33, 0x33, 0x33), FALSE);
+
+    // IDC_BTN_TCP ì»¨íŠ¸ë¡¤ í•¸ë“¤ ì²´í¬
+    CWnd* pbtnTCP = GetDlgItem(IDC_BTN_TCP);
+    if (pbtnTCP == nullptr)
     {
-        AfxMessageBox(_T("·Î°í ÀÌ¹ÌÁö¸¦ ·ÎµåÇÒ ¼ö ¾ø½À´Ï´Ù."));
+        TRACE(_T("ì˜¤ë¥˜: IDC_BTN_TCP ì»¨íŠ¸ë¡¤ì„ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤.\n"));
     }
     else
     {
-        // ¿øÇÏ´Â Å©±â·Î ½ºÄÉÀÏ¸µ (¿¹: 300x150)
-        int nNewWidth = 445;
-        int nNewHeight = 232;
-        HBITMAP hBmpScaled = ScaleBitmap(hBmpLogo, nNewWidth, nNewHeight);
-        // ¿øº» ºñÆ®¸ÊÀº ´õ ÀÌ»ó ÇÊ¿ä ¾øÀ¸¹Ç·Î »èÁ¦
-        DeleteObject(hBmpLogo);
+        TRACE(_T("IDC_BTN_TCP ì»¨íŠ¸ë¡¤ í•¸ë“¤: 0x%p\n"), pbtnTCP->GetSafeHwnd());
+    }
+    // ê³µí†µ ë‹¤ì´ì–¼ë¡œê·¸ ì°½ ìœ„ì¹˜(x,y) í¬ê¸° (w,h)
+    MoveWindow(100, 100, 1200, 600);
 
-        // ½ºÄÉÀÏµÈ ºñÆ®¸ÊÀ» Picture Control¿¡ ¼³Á¤
-        m_staticLogo.ModifyStyle(0, SS_BITMAP);
-        m_staticLogo.SetBitmap(hBmpScaled);
+    // íƒ€ì´í‹€ëª¨ë“œ
+    m_bIsMainMode = FALSE;
+    ShowTitleControls(TRUE);
+    ShowMainControls(FALSE);
 
-        // ·Î°í¸¦ ´ëÈ­»óÀÚ Áß¾Ó¿¡ ¹èÄ¡
-        CRect rcDlg, rcLogo;
-        GetClientRect(&rcDlg);
-        m_staticLogo.GetWindowRect(&rcLogo);
-        ScreenToClient(&rcLogo);
-        int x = (rcDlg.Width() - rcLogo.Width()) / 2;
-        int y = (rcDlg.Height() - rcLogo.Height()) / 2;
-        m_staticLogo.SetWindowPos(NULL, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
+    {
+        // íƒ€ì´í‹€ë¡œê³  (ì˜¤ë¥¸ìª½)
+        HBITMAP hBmp = (HBITMAP)::LoadImage(
+            AfxGetInstanceHandle(),
+            MAKEINTRESOURCE(IDB_LOGO),
+            IMAGE_BITMAP,
+            0, 0,
+            LR_CREATEDIBSECTION
+        );
+        if (hBmp)
+        {
+            HBITMAP hScaled = ScaleBitmap(hBmp, 445, 232);
+            DeleteObject(hBmp);
+
+            m_staticTitleLogoRight.ModifyStyle(0, SS_BITMAP);
+            m_staticTitleLogoRight.SetBitmap(hScaled);
+
+            CRect rcDlg, rcLogo;
+            GetClientRect(&rcDlg);
+            m_staticTitleLogoRight.GetWindowRect(&rcLogo);
+            ScreenToClient(&rcLogo);
+            int x = (rcDlg.Width() - rcLogo.Width()) / 2;
+            int y = (rcDlg.Height() - rcLogo.Height()) / 2;
+            m_staticTitleLogoRight.SetWindowPos(NULL, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
+        }
+    }
+
+    {
+        // íƒ€ì´í‹€ ë²„íŠ¼
+        m_btnStart.EnableWindowsTheming(FALSE);
+        m_btnStart.SetFaceColor(RGB(0, 0, 0));
+        m_btnStart.SetTextColor(RGB(255, 255, 255));
+        m_btnStart.m_nFlatStyle = CMFCButton::BUTTONSTYLE_FLAT;
+        m_btnStart.m_bTransparent = false;
+
+        // ë²„íŠ¼ ìœ„ì¹˜ (x=550, y=500) ë“±
+        m_btnStart.SetWindowPos(NULL, 550, 500, 100, 40, SWP_NOZORDER);
+    }
+    
+    // ---------------
+    // ë©”ì¸í™”ë©´
+    // ---------------
+
+    {
+        HBITMAP hBmp = (HBITMAP)::LoadImage(
+            AfxGetInstanceHandle(),
+            MAKEINTRESOURCE(IDB_LOGO),
+            IMAGE_BITMAP,
+            0, 0,
+            LR_CREATEDIBSECTION
+        );
+        if (hBmp)
+        {
+            // ì˜ˆ: 100Ã—50ìœ¼ë¡œ ì¶•ì†Œ
+            HBITMAP hScaled = ScaleBitmap(hBmp, 223, 116);
+            DeleteObject(hBmp);
+
+            m_staticMainLogoLeft.ModifyStyle(0, SS_BITMAP);
+            m_staticMainLogoLeft.SetBitmap(hScaled);
+
+            // ìœ„ì¹˜ (ì™¼ìª½ ìƒë‹¨, ì˜ˆ: x=10, y=10)
+            m_staticMainLogoLeft.SetWindowPos(NULL, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
+
+
+        }
+    }
+
+    {
+        HBITMAP hBmp = (HBITMAP)::LoadImage(
+            AfxGetInstanceHandle(),
+            MAKEINTRESOURCE(IDB_LOGO),
+            IMAGE_BITMAP,
+            0, 0,
+            LR_CREATEDIBSECTION
+        );
+        if (hBmp)
+        {
+            // ì˜ˆ: 300Ã—150
+            HBITMAP hScaled = ScaleBitmap(hBmp, 445, 232);
+            DeleteObject(hBmp);
+
+            m_staticMainLogoRight.ModifyStyle(0, SS_BITMAP);
+            m_staticMainLogoRight.SetBitmap(hScaled);
+
+            // ì¤‘ì•™ ë°°ì¹˜
+            CRect rcDlg, rcLogo;
+            GetClientRect(&rcDlg);
+            m_staticMainLogoRight.GetWindowRect(&rcLogo);
+            ScreenToClient(&rcLogo);
+            int x = ((rcDlg.Width()+223) - rcLogo.Width()) / 2;
+            int y = (rcDlg.Height() - rcLogo.Height()) / 2;
+            m_staticMainLogoRight.SetWindowPos(NULL, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
+
+        }
+    }
+
+    {
+        // ë©”ì¸ë²„íŠ¼
+        // ë©”ì¸ ë²„íŠ¼ë“¤ì˜ ìœ„ì¹˜ì™€ í¬ê¸°, ìƒ‰ìƒ ì¡°ì ˆ
+    // ì˜ˆ: ë²„íŠ¼ í¬ê¸°ë¥¼ 120x40, ìƒ‰ìƒ ë°°ê²½ì„ íŒŒë€ìƒ‰ ë“±
+        m_btnTCP.EnableWindowsTheming(FALSE);
+        m_btnTCP.SetWindowPos(NULL, 10, 150, 213, 40, SWP_NOZORDER);
+        m_btnTCP.EnableWindowsTheming(FALSE);
+        m_btnTCP.SetFaceColor(RGB(255, 255, 255));
+        m_btnTCP.SetTextColor(RGB(0, 0, 0));
+
+        // ë²„íŠ¼ í…ìŠ¤íŠ¸ ìƒ‰ìƒì€ ê¸°ë³¸ê°’ ê·¸ëŒ€ë¡œ ì‚¬ìš©
+        m_btnRtuOver.EnableWindowsTheming(FALSE);
+        m_btnRtuOver.SetWindowPos(NULL, 10, 220, 213, 40, SWP_NOZORDER);
+        m_btnRtuOver.EnableWindowsTheming(FALSE);
+        m_btnRtuOver.SetFaceColor(RGB(255, 255, 255));
+        m_btnRtuOver.SetTextColor(RGB(0, 0, 0));
+
+        m_btnRTU.EnableWindowsTheming(FALSE);
+        m_btnRTU.SetWindowPos(NULL, 10, 290, 213, 40, SWP_NOZORDER);
+        m_btnRTU.EnableWindowsTheming(FALSE);
+        m_btnRTU.SetFaceColor(RGB(255, 255, 255));
+        m_btnRTU.SetTextColor(RGB(0, 0, 0));
+
+        m_btnASCII.EnableWindowsTheming(FALSE);
+        m_btnASCII.SetWindowPos(NULL, 10, 360, 213, 40, SWP_NOZORDER);
+        m_btnASCII.EnableWindowsTheming(FALSE);
+        m_btnASCII.SetFaceColor(RGB(255, 255, 255));
+        m_btnASCII.SetTextColor(RGB(0, 0, 0));
     }
 
 
-    // Ã¢ À§Ä¡(x,y) Å©±â (w,h)
-    MoveWindow(100, 100, 1200, 600);
     return TRUE;
 }
 
-// ºñÆ®¸ÊÀ» ÁöÁ¤µÈ Å©±â·Î ½ºÄÉÀÏ¸µÇÏ´Â ÇïÆÛ ÇÔ¼ö
+// ë¹„íŠ¸ë§µì„ ì§€ì •ëœ í¬ê¸°ë¡œ ìŠ¤ì¼€ì¼ë§í•˜ëŠ” í—¬í¼ í•¨ìˆ˜
 HBITMAP CMAINDlg::ScaleBitmap(HBITMAP hBmpSrc, int nNewWidth, int nNewHeight)
 {
     if (!hBmpSrc)
@@ -86,22 +223,22 @@ HBITMAP CMAINDlg::ScaleBitmap(HBITMAP hBmpSrc, int nNewWidth, int nNewHeight)
     BITMAP bm;
     GetObject(hBmpSrc, sizeof(bm), &bm);
 
-    // ¼Ò½º DC »ı¼º
+    // ì†ŒìŠ¤ DC ìƒì„±
     CDC dcSrc;
     dcSrc.CreateCompatibleDC(NULL);
     HBITMAP hOldSrc = (HBITMAP)SelectObject(dcSrc.m_hDC, hBmpSrc);
 
-    // ´ë»ó DC »ı¼º
+    // ëŒ€ìƒ DC ìƒì„±
     CDC dcMem;
     dcMem.CreateCompatibleDC(NULL);
     HBITMAP hBmpScaled = CreateCompatibleBitmap(dcSrc, nNewWidth, nNewHeight);
     HBITMAP hOldMem = (HBITMAP)SelectObject(dcMem.m_hDC, hBmpScaled);
 
-    // StretchBlt·Î ½ºÄÉÀÏ¸µ
+    // StretchBltë¡œ ìŠ¤ì¼€ì¼ë§
     StretchBlt(dcMem.m_hDC, 0, 0, nNewWidth, nNewHeight,
         dcSrc.m_hDC, 0, 0, bm.bmWidth, bm.bmHeight, SRCCOPY);
 
-    // ¿ø·¡ DC º¹¿ø
+    // ì›ë˜ DC ë³µì›
     SelectObject(dcSrc.m_hDC, hOldSrc);
     SelectObject(dcMem.m_hDC, hOldMem);
 
@@ -113,22 +250,44 @@ BOOL CMAINDlg::OnEraseBkgnd(CDC* pDC)
     CRect rc;
     GetClientRect(&rc);
 
-    //¿ŞÂÊ ÆĞ³Î
-    CRect rcLeft(rc.left, rc.top, rc.left + 150, rc.bottom);
-    pDC->FillSolidRect(rcLeft, RGB(0, 0, 0));
+    if (m_bIsMainMode)
+    {
+        //ì™¼ìª½ íŒ¨ë„
+        CRect rcLeft(rc.left, rc.top, rc.left + 223, rc.bottom);
+        pDC->FillSolidRect(rcLeft, RGB(0, 0, 0));
 
-    //³ª¸ÓÁö
-    CRect rcRight(rcLeft.right, rc.top, rc.right, rc.bottom);
+        //ë‚˜ë¨¸ì§€
+        CRect rcRight(rcLeft.right, rc.top, rc.right, rc.bottom);
+        pDC->FillSolidRect(rcRight, RGB(255, 255, 255));
+    }
+    else
+    {
+        pDC->FillSolidRect(rc, RGB(255, 255, 255));
+    }
 
-    // ¹è°æ»öÀ» ¿¬ÇÑ È¸»ö(RGB 240,240,240)À¸·Î Ã¤¿ò
-    pDC->FillSolidRect(rcRight, RGB(255, 255, 255));
-    return TRUE;  // TRUE ¹İÈ¯ÇÏ¿© ±âº» ¹è°æ ±×¸®±â¸¦ ÇÏÁö ¾ÊÀ½
+    
+    return TRUE;  // TRUE ë°˜í™˜í•˜ì—¬ ê¸°ë³¸ ë°°ê²½ ê·¸ë¦¬ê¸°ë¥¼ í•˜ì§€ ì•ŠìŒ
 }
 
-// ¹öÆ° Å¬¸¯ ÇÚµé·¯µé
+void CMAINDlg::OnBnClickedButtonStartTitle()
+{
+    m_bIsMainMode = TRUE;
+    ShowTitleControls(FALSE);
+    ShowMainControls(TRUE);
+    Invalidate();
+}
+
+// ë²„íŠ¼ í´ë¦­ í•¸ë“¤ëŸ¬ë“¤
 void CMAINDlg::OnBnClickedBtnTCP()
 {
-    AfxMessageBox(_T("TCP/IP clicked"));
+    m_staticMainLogoRight.ShowWindow(SW_HIDE);
+
+    // ë²„íŠ¼ìƒ‰ìƒ
+    ResetButtonColors();
+    m_btnTCP.SetFaceColor(RGB(0xFE, 0xD1, 0xB4));
+    m_btnTCP.SetTextColor(RGB(0, 0, 0));
+
+    ShowTcpControls(TRUE);
 }
 void CMAINDlg::OnBnClickedBtnRtuOver()
 {
@@ -141,4 +300,87 @@ void CMAINDlg::OnBnClickedBtnRTU()
 void CMAINDlg::OnBnClickedBtnASCII()
 {
     AfxMessageBox(_T("ASCII clicked"));
+}
+
+// í™”ë©´ ì „í™˜ìš© í•¨ìˆ˜
+void CMAINDlg::ShowTitleControls(BOOL bShow)
+{
+    int nCmd = bShow ? SW_SHOW : SW_HIDE;
+    // ì˜¤ë¥¸ìª½ë¡œê³ 
+    m_staticTitleLogoRight.ShowWindow(nCmd);
+    GetDlgItem(IDC_STATIC_TITLE_LOGO_RIGHT)->ShowWindow(nCmd);
+    m_btnStart.ShowWindow(nCmd);
+}
+
+void CMAINDlg::ShowMainControls(BOOL bShow)
+{
+    int nCmd = bShow ? SW_SHOW : SW_HIDE;
+    // ì™¼ìª½ë¡œê³ 
+    m_staticMainLogoLeft.ShowWindow(nCmd);
+
+    // ì˜¤ë¥¸ìª½ë¡œê³ 
+    m_staticMainLogoRight.ShowWindow(nCmd);
+
+    // 4ë²„íŠ¼
+    GetDlgItem(IDC_BTN_TCP)->ShowWindow(nCmd);
+    GetDlgItem(IDC_BTN_RTUOVER)->ShowWindow(nCmd);
+    GetDlgItem(IDC_BTN_RTU)->ShowWindow(nCmd);
+    GetDlgItem(IDC_BTN_ASCII)->ShowWindow(nCmd);
+    GetDlgItem(IDC_STATIC_MAIN_LOGO_LEFT)->ShowWindow(nCmd);
+    GetDlgItem(IDC_STATIC_MAIN_LOGO_RIGHT)->ShowWindow(nCmd);
+    
+
+}
+
+void CMAINDlg::ShowTcpControls(BOOL bShow)
+{
+    if (bShow)
+    {
+        if (!m_pTCPCHILD)
+        {
+            m_pTCPCHILD = new CTCPChildDlg;
+            if (!m_pTCPCHILD->Create(IDD_TCP_CHILD, this))
+            {
+                AfxMessageBox(_T("TCP Child Dialog ìƒì„±ì‹¤íŒ¨"));
+                delete m_pTCPCHILD;
+                m_pTCPCHILD = nullptr;
+                return;
+            }
+            
+
+            // ì˜¤ë¥¸ìª½ ì˜ì—­
+            CRect rc; GetClientRect(&rc);
+            rc.left += 223;
+            m_pTCPCHILD->SetWindowPos(NULL, rc.left, rc.top, rc.Width()  , rc.Height(), SWP_SHOWWINDOW);
+
+        }
+        else
+        {
+            m_pTCPCHILD->ShowWindow(SW_SHOW);
+        }
+    }
+    else
+    {
+        if (m_pTCPCHILD)
+        {
+            m_pTCPCHILD->ShowWindow(SW_HIDE);
+        }
+    }
+}
+
+// ë²„íŠ¼ ìƒ‰ìƒ ì´ˆê¸°í™”
+void CMAINDlg::ResetButtonColors()
+{
+    // ëª¨ë“  ë©”ë‰´ ë²„íŠ¼ì„ ê¸°ë³¸ ìƒ‰ìƒ(í°ìƒ‰ ë°°ê²½, ê²€ì • í…ìŠ¤íŠ¸)ìœ¼ë¡œ
+    m_btnTCP.SetFaceColor(RGB(255, 255, 255));
+    m_btnTCP.SetTextColor(RGB(0, 0, 0));
+
+    m_btnRtuOver.SetFaceColor(RGB(255, 255, 255));
+    m_btnRtuOver.SetTextColor(RGB(0, 0, 0));
+
+    m_btnRTU.SetFaceColor(RGB(255, 255, 255));
+    m_btnRTU.SetTextColor(RGB(0, 0, 0));
+
+    m_btnASCII.SetFaceColor(RGB(255, 255, 255));
+    m_btnASCII.SetTextColor(RGB(0, 0, 0));
 }
